@@ -44,7 +44,7 @@ func GetTemplate(name string, r *http.Request) *template.Template {
         },
         "IsChecked": func(s string, v string) bool {
             //if logger.IsDebug() {
-            //	logger.Debug("IsChecked", "s", s, "v", v, "return", s == v)
+            //  logger.Debug("IsChecked", "s", s, "v", v, "return", s == v)
             //}
             return s == v
         },
