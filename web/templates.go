@@ -5,7 +5,8 @@ import (
 	"github.com/yosssi/ace"
 	"net/http"
 
-	"github.com/jbrook/go-web-utils/i18n"
+	"github.com/natos/go-web-utils/i18n"
+	structs "github.com/fatih/structs"
 	"log"
 	"strings"
 	"time"
@@ -18,6 +19,8 @@ const baseTemplateName = "layout"
 
 type TemplateData map[string]interface{}
 
+//type TemplateData struct {}
+
 type TemplateConfig struct {
 	Asset func(name string) ([]byte, error)
 	Root  string
@@ -26,7 +29,8 @@ type TemplateConfig struct {
 var templateConfig TemplateConfig
 
 func GetTemplate(name string, r *http.Request) *template.Template {
-	data := GetTemplateData(r)
+	//data := GetTemplateData(r)
+	contextData := GetContextData(r)
 
 	funcMap := template.FuncMap{
 		// FIXME: Work out how the calling application can inject functions into the function map
@@ -65,7 +69,7 @@ func GetTemplate(name string, r *http.Request) *template.Template {
 			return strconv.FormatFloat(f, 'f', 2, 32)
 		},
 		"static": GetStaticPath,
-		"T":      data["UnsafeT"],
+		"T":      contextData.Data["UnsafeT"],
 	}
 
 	tpl, err := ace.Load(baseTemplateName, name, &ace.Options{
@@ -105,21 +109,32 @@ func getDefaultTemplateData(r *http.Request) TemplateData {
 	return data
 }
 
-func sanitizeData(data TemplateData) {
+func sanitizeData(contextData ContextData) {
+
+	data := contextData.Data
+
+	data["Session"] = structs.Map(contextData.Session)
+
+	data["Search"] = structs.Map(contextData.Search)
+
+	data["Profile"] = structs.Map(contextData.Profile)
+
+	data["Customer"] = structs.Map(contextData.Customer)
+
 	futureTs := make(map[string]i18n.FutureTranslation)
 
 	for key, value := range data {
 		switch t := value.(type) {
-			case string:
-			data[key] = template.HTML(template.HTMLEscapeString(t))
-			case i18n.FutureTranslation:
-			futureTs[key] = t
+		case string:
+				data[key] = template.HTML(template.HTMLEscapeString(t))
+		case i18n.FutureTranslation:
+				futureTs[key] = t
 		}
 	}
 
 	for key, value := range futureTs {
 		data[key] = value()
 	}
+
+	fmt.Println(data)
 }
-
-
